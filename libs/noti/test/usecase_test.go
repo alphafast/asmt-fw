@@ -39,7 +39,14 @@ var _ = ginkgo.Describe("NotiUseCase", func() {
 		mockNotiRepo = notiMock.NewMockNotiRepository(mockCtrl)
 		ctx = context.Background()
 
-		usecase = uc.New(mockNotiRepo, mockNotiAdapter)
+		deps := uc.NotiUsecaseDeps{
+			NotiRepo:    mockNotiRepo,
+			NotiAdapter: mockNotiAdapter,
+		}
+		conf := uc.NotiUsecaseConf{
+			NotiChannelByEventSource: notiModel.DefaultNotiChannelBySourceEvent,
+		}
+		usecase = uc.New(deps, conf)
 	})
 
 	ginkgo.Describe("Notify", func() {

@@ -6,6 +6,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
+	"github.com/samber/lo"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/alphafast/asmt-fw/libs/domain/noti"
@@ -16,15 +18,28 @@ var (
 	createUUID = uuid.New
 )
 
+type NotiRequestBuilder func(userChans map[model.NotiType]model.NotiUserNotiChannel) (*model.NotiRequest, error)
+
 type NotiUsecase struct {
-	notiRepo    noti.NotiRepository
-	notiAdapter noti.NotiAdapter
+	notiRepo                 noti.NotiRepository
+	notiAdapter              noti.NotiAdapter
+	notiChannelByEventSource map[model.SourceEvent][]model.NotiType
+}
+type NotiUsecaseConf struct {
+	NotiChannelByEventSource map[model.SourceEvent][]model.NotiType
 }
 
-func New(notiRepo noti.NotiRepository, notiAdapter noti.NotiAdapter) *NotiUsecase {
+type NotiUsecaseDeps struct {
+	NotiRepo    noti.NotiRepository
+	NotiAdapter noti.NotiAdapter
+}
+
+func New(d NotiUsecaseDeps, c NotiUsecaseConf) *NotiUsecase {
 	return &NotiUsecase{
-		notiRepo:    notiRepo,
-		notiAdapter: notiAdapter,
+		notiRepo:    d.NotiRepo,
+		notiAdapter: d.NotiAdapter,
+
+		notiChannelByEventSource: c.NotiChannelByEventSource,
 	}
 }
 
@@ -123,26 +138,53 @@ func (uc *NotiUsecase) buildItemShippedNotification(ctx context.Context, reqID s
 		return nil, errors.Wrap(err, "[NotiUsecase.BuildItemShippedNotification] FindUserNotification error")
 	}
 
-	chanMap := user.GetTypeChannelMap()
-	if _, ok := chanMap[model.PushType]; !ok {
-		return nil, errors.New("[NotiUsecase.BuildItemShippedNotification] User not have push channel")
+	builderMap := map[model.NotiType]NotiRequestBuilder{
+		model.PushType: func(userChans map[model.NotiType]model.NotiUserNotiChannel) (*model.NotiRequest, error) {
+			if _, ok := userChans[model.PushType]; !ok {
+				return nil, errors.New("[NotiUsecase.BuildItemShippedNotification] User not have push channel")
+			}
+
+			pushChannel := userChans[model.PushType].PushChannelPayload
+
+			return &model.NotiRequest{
+				ID:          createUUID().String(),
+				ReqID:       reqID,
+				SourceEvent: model.ItemShippedNotification,
+				NotiType:    model.PushType,
+				PushPayload: &model.PushPayload{
+					Title: "Item Shipped",
+					Body:  "Your item has been shipped",
+					Token: pushChannel.Token,
+				},
+			}, nil
+		},
+		model.EmailType: func(userChans map[model.NotiType]model.NotiUserNotiChannel) (*model.NotiRequest, error) {
+			if _, ok := userChans[model.EmailType]; !ok {
+				return nil, errors.New("[NotiUsecase.BuildItemShippedNotification] User not have email channel")
+			}
+
+			emailChannel := userChans[model.EmailType].EmailChannelPayload
+
+			return &model.NotiRequest{
+				ID:          createUUID().String(),
+				ReqID:       reqID,
+				SourceEvent: model.ItemShippedNotification,
+				NotiType:    model.EmailType,
+				EmailPayload: &model.EmailPayload{
+					Subject: "Item Shipped",
+					Body:    "Your item has been shipped",
+					To:      emailChannel.EmailAddress,
+				},
+			}, nil
+		},
 	}
 
-	pushChannel := chanMap[model.PushType].PushChannelPayload
+	reqs, err := uc.createFromBuilder(ctx, model.ItemShippedNotification, builderMap, user)
+	if err != nil {
+		return nil, errors.Wrap(err, "[NotiUsecase.BuildItemShippedNotification] createFromBuilder error")
+	}
 
-	return []model.NotiRequest{
-		{
-			ID:          createUUID().String(),
-			ReqID:       reqID,
-			SourceEvent: model.ItemShippedNotification,
-			NotiType:    model.PushType,
-			PushPayload: &model.PushPayload{
-				Title: "Item Shipped",
-				Body:  "Your item has been shipped",
-				Token: pushChannel.Token,
-			},
-		},
-	}, nil
+	return reqs, nil
 }
 
 func (uc *NotiUsecase) buildChatMessageNotification(ctx context.Context, reqID string, input noti.ChatInput) ([]model.NotiRequest, error) {
@@ -152,40 +194,53 @@ func (uc *NotiUsecase) buildChatMessageNotification(ctx context.Context, reqID s
 		return nil, errors.Wrap(err, "[NotiUsecase.BuildChatMessageNotification] FindUserNotification error")
 	}
 
-	chanMap := user.GetTypeChannelMap()
-	if _, ok := chanMap[model.PushType]; !ok {
-		return nil, errors.New("[NotiUsecase.BuildChatMessageNotification] User not have push channel")
-	}
-	if _, ok := chanMap[model.EmailType]; !ok {
-		return nil, errors.New("[NotiUsecase.BuildChatMessageNotification] User not have email channel")
-	}
-	pushChannel := chanMap[model.PushType].PushChannelPayload
-	emailChannel := chanMap[model.EmailType].EmailChannelPayload
+	builderMap := map[model.NotiType]NotiRequestBuilder{
+		model.PushType: func(userChans map[model.NotiType]model.NotiUserNotiChannel) (*model.NotiRequest, error) {
+			if _, ok := userChans[model.PushType]; !ok {
+				return nil, errors.New("[NotiUsecase.BuildChatMessageNotification] User not have push channel")
+			}
 
-	return []model.NotiRequest{
-		{
-			ID:          createUUID().String(),
-			ReqID:       reqID,
-			SourceEvent: model.ChatMessageNotification,
-			NotiType:    model.PushType,
-			PushPayload: &model.PushPayload{
-				Title: "New Message",
-				Body:  input.Messages,
-				Token: pushChannel.Token,
-			},
+			pushChannel := userChans[model.PushType].PushChannelPayload
+
+			return &model.NotiRequest{
+				ID:          createUUID().String(),
+				ReqID:       reqID,
+				SourceEvent: model.ChatMessageNotification,
+				NotiType:    model.PushType,
+				PushPayload: &model.PushPayload{
+					Title: "New Message",
+					Body:  input.Messages,
+					Token: pushChannel.Token,
+				},
+			}, nil
 		},
-		{
-			ID:          createUUID().String(),
-			ReqID:       reqID,
-			SourceEvent: model.ChatMessageNotification,
-			NotiType:    model.EmailType,
-			EmailPayload: &model.EmailPayload{
-				Subject: "New Message",
-				Body:    input.Messages,
-				To:      emailChannel.EmailAddress,
-			},
+		model.EmailType: func(userChans map[model.NotiType]model.NotiUserNotiChannel) (*model.NotiRequest, error) {
+			if _, ok := userChans[model.EmailType]; !ok {
+				return nil, errors.New("[NotiUsecase.BuildChatMessageNotification] User not have email channel")
+			}
+
+			emailChannel := userChans[model.EmailType].EmailChannelPayload
+
+			return &model.NotiRequest{
+				ID:          createUUID().String(),
+				ReqID:       reqID,
+				SourceEvent: model.ChatMessageNotification,
+				NotiType:    model.EmailType,
+				EmailPayload: &model.EmailPayload{
+					Subject: "New Message",
+					Body:    input.Messages,
+					To:      emailChannel.EmailAddress,
+				},
+			}, nil
 		},
-	}, nil
+	}
+
+	reqs, err := uc.createFromBuilder(ctx, model.ChatMessageNotification, builderMap, user)
+	if err != nil {
+		return nil, errors.Wrap(err, "[NotiUsecase.BuildChatMessageNotification] createFromBuilder error")
+	}
+
+	return reqs, nil
 }
 
 func (uc *NotiUsecase) buildBuyerPurchaseNotification(ctx context.Context, reqID string, input noti.BuyerPurchaseInput) ([]model.NotiRequest, error) {
@@ -195,41 +250,53 @@ func (uc *NotiUsecase) buildBuyerPurchaseNotification(ctx context.Context, reqID
 		return nil, errors.Wrap(err, "[NotiUsecase.BuildBuyerPurchaseNotification] FindUserNotification error")
 	}
 
-	chanMap := user.GetTypeChannelMap()
-	if _, ok := chanMap[model.PushType]; !ok {
-		return nil, errors.New("[NotiUsecase.BuildBuyerPurchaseNotification] User not have push channel")
-	}
-	if _, ok := chanMap[model.EmailType]; !ok {
-		return nil, errors.New("[NotiUsecase.BuildBuyerPurchaseNotification] User not have email channel")
+	builderMap := map[model.NotiType]NotiRequestBuilder{
+		model.PushType: func(userChans map[model.NotiType]model.NotiUserNotiChannel) (*model.NotiRequest, error) {
+			if _, ok := userChans[model.PushType]; !ok {
+				return nil, errors.New("[NotiUsecase.BuildBuyerPurchaseNotification] User not have push channel")
+			}
+
+			pushChannel := userChans[model.PushType].PushChannelPayload
+
+			return &model.NotiRequest{
+				ID:          createUUID().String(),
+				ReqID:       reqID,
+				SourceEvent: model.BuyerPurchaseNotification,
+				NotiType:    model.PushType,
+				PushPayload: &model.PushPayload{
+					Title: "Buyer Purchase updated",
+					Body:  fmt.Sprintf("Buyer have purchased order %s", input.OrderID),
+					Token: pushChannel.Token,
+				},
+			}, nil
+		},
+		model.EmailType: func(userChans map[model.NotiType]model.NotiUserNotiChannel) (*model.NotiRequest, error) {
+			if _, ok := userChans[model.EmailType]; !ok {
+				return nil, errors.New("[NotiUsecase.BuildBuyerPurchaseNotification] User not have email channel")
+			}
+
+			emailChannel := userChans[model.EmailType].EmailChannelPayload
+
+			return &model.NotiRequest{
+				ID:          createUUID().String(),
+				ReqID:       reqID,
+				SourceEvent: model.BuyerPurchaseNotification,
+				NotiType:    model.EmailType,
+				EmailPayload: &model.EmailPayload{
+					Subject: "Buyer Purchase updated",
+					Body:    fmt.Sprintf("Buyer have purchased order %s, more information <a href=\"someweb.com/order/%s\">click</a>", input.OrderID, input.OrderID),
+					To:      emailChannel.EmailAddress,
+				},
+			}, nil
+		},
 	}
 
-	pushChannel := chanMap[model.PushType].PushChannelPayload
-	emailChannel := chanMap[model.EmailType].EmailChannelPayload
+	reqs, err := uc.createFromBuilder(ctx, model.BuyerPurchaseNotification, builderMap, user)
+	if err != nil {
+		return nil, errors.Wrap(err, "[NotiUsecase.BuildBuyerPurchaseNotification] createFromBuilder error")
+	}
 
-	return []model.NotiRequest{
-		{
-			ID:          createUUID().String(),
-			ReqID:       reqID,
-			SourceEvent: model.BuyerPurchaseNotification,
-			NotiType:    model.PushType,
-			PushPayload: &model.PushPayload{
-				Title: "Buyer Purchase updated",
-				Body:  fmt.Sprintf("Buyer have purchased order %s", input.OrderID),
-				Token: pushChannel.Token,
-			},
-		},
-		{
-			ID:          createUUID().String(),
-			ReqID:       reqID,
-			SourceEvent: model.BuyerPurchaseNotification,
-			NotiType:    model.EmailType,
-			EmailPayload: &model.EmailPayload{
-				Subject: "Buyer Purchase updated",
-				Body:    fmt.Sprintf("Buyer have purchased order %s, more information <a href=\"someweb.com/order/%s\">click</a>", input.OrderID, input.OrderID),
-				To:      emailChannel.EmailAddress,
-			},
-		},
-	}, nil
+	return reqs, nil
 }
 
 func (uc *NotiUsecase) buildRemindToPayOrderNotification(ctx context.Context, reqID string, input noti.RemindPurchasePendingOrderInput) ([]model.NotiRequest, error) {
@@ -239,24 +306,105 @@ func (uc *NotiUsecase) buildRemindToPayOrderNotification(ctx context.Context, re
 		return nil, errors.Wrap(err, "[NotiUsecase.BuildRemindToPayOrderNotification] FindUserNotification error")
 	}
 
-	chanMap := user.GetTypeChannelMap()
-	if _, ok := chanMap[model.PushType]; !ok {
-		return nil, errors.New("[NotiUsecase.BuildRemindToPayOrderNotification] User not have push channel")
+	// chanMap := user.GetTypeChannelMap()
+	// if _, ok := chanMap[model.PushType]; !ok {
+	// 	return nil, errors.New("[NotiUsecase.BuildRemindToPayOrderNotification] User not have push channel")
+	// }
+
+	// pushChannel := chanMap[model.PushType].PushChannelPayload
+
+	// return []model.NotiRequest{
+	// 	{
+	// 		ID:          createUUID().String(),
+	// 		ReqID:       reqID,
+	// 		SourceEvent: model.RemindToPayOrderNotification,
+	// 		NotiType:    model.PushType,
+	// 		PushPayload: &model.PushPayload{
+	// 			Title: "Remind to pay order",
+	// 			Body:  fmt.Sprintf("You have pending order %s, please pay", input.OrderID),
+	// 			Token: pushChannel.Token,
+	// 		},
+	// 	},
+	// }, nil
+
+	builderMap := map[model.NotiType]NotiRequestBuilder{
+		model.PushType: func(userChans map[model.NotiType]model.NotiUserNotiChannel) (*model.NotiRequest, error) {
+			if _, ok := userChans[model.PushType]; !ok {
+				return nil, errors.New("[NotiUsecase.BuildRemindToPayOrderNotification] User not have push channel")
+			}
+
+			pushChannel := userChans[model.PushType].PushChannelPayload
+
+			return &model.NotiRequest{
+				ID:          createUUID().String(),
+				ReqID:       reqID,
+				SourceEvent: model.RemindToPayOrderNotification,
+				NotiType:    model.PushType,
+				PushPayload: &model.PushPayload{
+					Title: "Remind to pay order",
+					Body:  fmt.Sprintf("You have pending order %s, please pay", input.OrderID),
+					Token: pushChannel.Token,
+				},
+			}, nil
+		},
+		model.EmailType: func(userChans map[model.NotiType]model.NotiUserNotiChannel) (*model.NotiRequest, error) {
+			if _, ok := userChans[model.EmailType]; !ok {
+				return nil, errors.New("[NotiUsecase.BuildRemindToPayOrderNotification] User not have email channel")
+			}
+
+			emailChannel := userChans[model.EmailType].EmailChannelPayload
+
+			return &model.NotiRequest{
+				ID:          createUUID().String(),
+				ReqID:       reqID,
+				SourceEvent: model.RemindToPayOrderNotification,
+				NotiType:    model.EmailType,
+				EmailPayload: &model.EmailPayload{
+					Subject: "Remind to pay order",
+					Body:    fmt.Sprintf("You have pending order %s, please pay", input.OrderID),
+					To:      emailChannel.EmailAddress,
+				},
+			}, nil
+		},
 	}
 
-	pushChannel := chanMap[model.PushType].PushChannelPayload
+	reqs, err := uc.createFromBuilder(ctx, model.RemindToPayOrderNotification, builderMap, user)
+	if err != nil {
+		return nil, errors.Wrap(err, "[NotiUsecase.BuildRemindToPayOrderNotification] createFromBuilder error")
+	}
 
-	return []model.NotiRequest{
-		{
-			ID:          createUUID().String(),
-			ReqID:       reqID,
-			SourceEvent: model.RemindToPayOrderNotification,
-			NotiType:    model.PushType,
-			PushPayload: &model.PushPayload{
-				Title: "Remind to pay order",
-				Body:  fmt.Sprintf("You have pending order %s, please pay", input.OrderID),
-				Token: pushChannel.Token,
-			},
-		},
-	}, nil
+	return reqs, nil
+}
+
+func (uc *NotiUsecase) createFromBuilder(ctx context.Context, targetEvent model.SourceEvent, builderMap map[model.NotiType]NotiRequestBuilder, user *model.NotiUser) ([]model.NotiRequest, error) {
+	logger := zerolog.Ctx(ctx)
+
+	targetTypes, ok := uc.notiChannelByEventSource[targetEvent]
+	if !ok {
+		return nil, errors.New("[NotiUsecase.createFromBuilder] Invalid source event")
+	}
+
+	userChans := user.GetTypeChannelMap()
+	reqs := lo.Reduce(targetTypes, func(acc []model.NotiRequest, cur model.NotiType, _ int) []model.NotiRequest {
+		builder, ok := builderMap[cur]
+		if ok {
+			req, err := builder(userChans)
+			if err != nil {
+				logger.Info().Err(err).Msgf("[NotiUsecase.createFromBuilder] Build notification request error")
+
+				return acc
+			}
+
+			acc = append(acc, *req)
+		}
+
+		return acc
+
+	}, []model.NotiRequest{})
+
+	if len(reqs) == 0 {
+		return nil, errors.New("[NotiUsecase.createFromBuilder] No valid channel to send notification")
+	}
+
+	return reqs, nil
 }

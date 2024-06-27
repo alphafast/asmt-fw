@@ -8,6 +8,7 @@ import (
 
 	// _ "github.com/go-sql-driver/mysql"
 
+	notiModel "github.com/alphafast/asmt-fw/libs/domain/noti/model"
 	fcmAdapter "github.com/alphafast/asmt-fw/libs/noti/adapter/fcm"
 	multiAdapter "github.com/alphafast/asmt-fw/libs/noti/adapter/multi"
 	senGridAdapter "github.com/alphafast/asmt-fw/libs/noti/adapter/sengrid"
@@ -52,7 +53,14 @@ func main() {
 	multiNotiAdapter := multiAdapter.NewNotiAdapter(sesMailProviderAdapter, fcmPushProviderAdapter, multiAdapter.WithBackupEmailAdapter(sendGridMailProviderAdapter))
 
 	// initialize notification service
-	notiService := notiUsercase.New(notiRepo, multiNotiAdapter)
+	ucDeps := notiUsercase.NotiUsecaseDeps{
+		NotiRepo:    notiRepo,
+		NotiAdapter: multiNotiAdapter,
+	}
+	ucConf := notiUsercase.NotiUsecaseConf{
+		NotiChannelByEventSource: notiModel.DefaultNotiChannelBySourceEvent,
+	}
+	notiService := notiUsercase.New(ucDeps, ucConf)
 
 	// initialize kafka consumer
 	host := env.RequiredEnv("KAFKA_HOST")

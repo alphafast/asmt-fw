@@ -13,3 +13,12 @@ const (
 	EmailType NotiType = "email"
 	PushType  NotiType = "push"
 )
+
+var (
+	DefaultNotiChannelBySourceEvent map[SourceEvent][]NotiType = map[SourceEvent][]NotiType{
+		ItemShippedNotification:      {PushType},
+		ChatMessageNotification:      {PushType, EmailType},
+		BuyerPurchaseNotification:    {PushType, EmailType},
+		RemindToPayOrderNotification: {PushType},
+	}
+)
