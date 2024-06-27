@@ -1,0 +1,71 @@
+[
+    {
+        "userId": "B_0e709310-7cdc-498a-af10-ed1570429bf9",
+        "channels": [
+            {
+                "notiType": "email",
+                "emailChannelPayload": {
+                    "emailAddress": "suttirat.kdt@gmail.com"
+                }
+            },
+            {
+                "notiType": "push",
+                "pushChannelPayload": {
+                    "token": "hq9DziFis1D6ImgQ3KcQW2zBxLbqspBAhdERQgazT8jpWYdzkmwJUHQ2e3rXAcvH"
+                }
+            }
+        ]
+    },
+    {
+        "userId": "B_df054b80-742b-48e9-bf9e-043d6b1e61d0",
+        "channels": [
+            {
+                "notiType": "email",
+                "emailChannelPayload": {
+                    "emailAddress": "some.buyer@gmail.com"
+                }
+            },
+            {
+                "notiType": "push",
+                "pushChannelPayload": {
+                    "token": "CvVZwWqYwkegbps8qsXT71pbeM2OQsy9h09UYgB7FdopIAKFW8DZBKz7ia4jR79E"
+                }
+            }
+        ]
+
+    },
+    {
+        "userId": "B_4020e733-d37c-4975-ac39-eba11dfb21e2",
+        "channels": [
+            {
+                "notiType": "email",
+                "emailChannelPayload": {
+                    "emailAddress": "another.buyer@gmail.com"
+                }
+            },
+            {
+                "notiType": "push",
+                "pushChannelPayload": {
+                    "token": "CT6EmjOxeU7cXG0TOhebPoXLfzXoY04irtmOZChM89tPihl3wF4ZO3JgAJ9bktEP"
+                }
+            }
+        ]
+    },
+    {
+        "userId": "S_b2425b12-d348-49d6-8dc7-78e2ceed71be",
+        "channels": [
+            {
+                "notiType": "email",
+                "emailChannelPayload": {
+                    "emailAddress": "natacha.admin@somebrand.com"
+                }
+            },
+            {
+                "notiType": "push",
+                "pushChannelPayload": {
+                    "token": "ykirrfbjZk7jB7DyQXf8VtLwq5T1qS4pbQelDgq1B12wSUEAx3H4S86h2jezFuep"
+                }
+            }
+        ]
+    }
+]

@@ -1,0 +1,19 @@
+redpanda:
+  kafka_api:
+    - address: 0.0.0.0
+      port: 9092
+  admin:
+    - address: 0.0.0.0
+      port: 9644
+  pandaproxy:
+    - address: 0.0.0.0
+      port: 8082
+  coproc_supervisor_server:
+    - address: 0.0.0.0
+      port: 43189
+  node_id: 0
+  rack: my_rack
+  seed_servers: []
+  log_segment_size: 536870912
+  data_directory: "/var/lib/redpanda/data"
+  developer_mode: true
