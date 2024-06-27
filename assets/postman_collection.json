@@ -1,0 +1,165 @@
+{
+	"info": {
+		"_postman_id": "0a1ead9c-d843-4d3a-bef7-171ba6a3fdc5",
+		"name": "Notification Project",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "33634892",
+		"_collection_link": "https://warped-flare-533536.postman.co/workspace/kenta~181cee62-1c02-44c9-8855-d227a5cfb3ed/collection/33634892-0a1ead9c-d843-4d3a-bef7-171ba6a3fdc5?action=share&source=collection_link&creator=33634892"
+	},
+	"item": [
+		{
+			"name": "async",
+			"item": [
+				{
+					"name": "[to-buyer] Item Shipped",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"sourceEvent\": \"item-shipped\",\n    \"itemShipped\": {\n        \"buyerUserId\": \"B_0e709310-7cdc-498a-af10-ed1570429bf9\",\n        \"items\": [\"a\", \"b\"]\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/notification/asynchronous"
+					},
+					"response": []
+				},
+				{
+					"name": "[to-seller] Chat message",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"sourceEvent\": \"chat-message\",\n    \"chatMessage\": {\n        \"sellerUserId\": \"S_b2425b12-d348-49d6-8dc7-78e2ceed71be\",\n        \"messages\": \"Hello from the other side\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/notification/asynchronous"
+					},
+					"response": []
+				},
+				{
+					"name": "[to-seller] Buyer Purchase",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"sourceEvent\": \"chat-message\",\n    \"chatMessage\": {\n        \"sellerUserId\": \"S_b2425b12-d348-49d6-8dc7-78e2ceed71be\",\n        \"messages\": \"Hello from the other side\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/notification/asynchronous"
+					},
+					"response": []
+				},
+				{
+					"name": "[to-buyer] Remind To Pay",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"sourceEvent\": \"remind-to-pay-order\",\n    \"remindToPay\": {\n        \"buyerUserId\": \"B_df054b80-742b-48e9-bf9e-043d6b1e61d0\",\n        \"orderId\": \"12345\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/notification/asynchronous"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "sync",
+			"item": [
+				{
+					"name": "[to-buyer] Item Shipped",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"sourceEvent\": \"item-shipped\",\n    \"itemShipped\": {\n        \"buyerUserId\": \"B_0e709310-7cdc-498a-af10-ed1570429bf9\",\n        \"items\": [\"a\", \"b\"]\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/notification"
+					},
+					"response": []
+				},
+				{
+					"name": "[to-seller] Chat message",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"sourceEvent\": \"chat-message\",\n    \"chatMessage\": {\n        \"sellerUserId\": \"S_b2425b12-d348-49d6-8dc7-78e2ceed71be\",\n        \"messages\": \"Hello from the other side\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/notification"
+					},
+					"response": []
+				},
+				{
+					"name": "[to-seller] Buyer Purchase",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"sourceEvent\": \"chat-message\",\n    \"chatMessage\": {\n        \"sellerUserId\": \"S_b2425b12-d348-49d6-8dc7-78e2ceed71be\",\n        \"messages\": \"Hello from the other side\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/notification"
+					},
+					"response": []
+				},
+				{
+					"name": "[to-buyer] Remind To Pay",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"sourceEvent\": \"remind-to-pay-order\",\n    \"remindToPay\": {\n        \"buyerUserId\": \"B_df054b80-742b-48e9-bf9e-043d6b1e61d0\",\n        \"orderId\": \"12345\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "localhost:3000/notification"
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

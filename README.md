@@ -21,6 +21,12 @@ This project was write in golang and contains multiple services that will workin
 | Remind to pay for pending order    | Push          | Buyer       |
 | Purchased items are shipped        | Push          | Buyer       |
 
+I using structure design of Clean Architecture in go to archive `Independent of Frameworks`, `Testable`, `Independent of Database`, and `Independent of any external agency`. Divided in to 4 layer of each domain.
+- Models
+- Repository, Adapter
+- Usecase
+- Handler
+
 ### Project Logical view
 
 ![Project Diagram](assets/logical-view-v1.png "Project Diagram")
@@ -80,3 +86,14 @@ This project introduce two way of sending notification.
 | POST/notification              | Synchronous request                  | 200 OK       |
 | POST/notification/asynchronous | Asynchronous request                 | 202 Accepted |
 | GET /notification/:reqId       | Retrieve Notification request result | 200 OK       |
+
+by the way I provide [postman](https://www.postman.com/downloads/) collection [here](assets/postman_collection.json) to easy play with this project
+
+## Running Tests
+This project has the unit-test for the business logic that implement in use case layer. You can run by below prepared make command.
+```bash
+make dev.test
+```
+
+## Note
+This project is just the assignment. Missing many of production idle need such as well security implement, the schema validation, well data schema, and etc. The intension need to introduce the design concept that fit with business requirement such as handle large scale of notification request, show the project structure and code organization, and etc.
