@@ -36,6 +36,7 @@ func NewRequestNotificationHandler(e *echo.Echo, d NotiHandlerDeps, opt NotiHand
 
 	e.POST("/notification/asynchronous", handler.RequestNotificationAsynchronous)
 	e.POST("/notification", handler.RequestNotification)
+	e.GET("/notification/:reqId", handler.GetNotificationResults)
 }
 
 func (nh *NotificationHandler) RequestNotification(c echo.Context) error {
@@ -93,4 +94,28 @@ func (nh *NotificationHandler) RequestNotificationAsynchronous(c echo.Context) e
 	logger.Info().Msgf("[NotificationHandler.RequestNotificationAsynchronous] %d notification(s) request accepted", len(notiReqs))
 
 	return c.JSON(http.StatusAccepted, notiReqs)
+}
+
+func (nh *NotificationHandler) GetNotificationResults(c echo.Context) error {
+	reqID := c.Param("reqId")
+
+	ctx, _ := logUtil.SetupZeroLogWithCtx(c.Request().Context())
+	notiResults, err := nh.notiUseCase.GetNotifyResultsByReqID(ctx, reqID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errors.Wrap(err, "[NotificationHandler.GetNotificationResults] error occurred").Error())
+	}
+
+	ress := []NotiResultItemResponse{}
+	for _, res := range notiResults {
+		ress = append(ress, NotiResultItemResponse{
+			ID:        res.ID,
+			IsSuccess: res.IsSuccess,
+			Reason:    res.Reason,
+		})
+	}
+
+	return c.JSON(http.StatusOK, NotiResultResponse{
+		ReqID: reqID,
+		Items: ress,
+	})
 }

@@ -1,6 +1,6 @@
 # Scalable Notification System
 
-This is a project assignment from fastwork company to design the notification system that can scalable on spike traffic.
+This is a project assignment from Fastwork company to design the notification system that can scalable on spike traffic.
 
 ## Table of Contents
 

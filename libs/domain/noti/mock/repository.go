@@ -50,19 +50,19 @@ func (mr *MockNotiRepositoryMockRecorder) FindUserNotification(arg0, arg1 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindUserNotification", reflect.TypeOf((*MockNotiRepository)(nil).FindUserNotification), arg0, arg1)
 }
 
-// GetNotifyResults mocks base method.
-func (m *MockNotiRepository) GetNotifyResults(arg0 context.Context, arg1 string) ([]model.NotiResult, error) {
+// GetNotifyResultsByReqID mocks base method.
+func (m *MockNotiRepository) GetNotifyResultsByReqID(arg0 context.Context, arg1 string) ([]model.NotiResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNotifyResults", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetNotifyResultsByReqID", arg0, arg1)
 	ret0, _ := ret[0].([]model.NotiResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetNotifyResults indicates an expected call of GetNotifyResults.
-func (mr *MockNotiRepositoryMockRecorder) GetNotifyResults(arg0, arg1 interface{}) *gomock.Call {
+// GetNotifyResultsByReqID indicates an expected call of GetNotifyResultsByReqID.
+func (mr *MockNotiRepositoryMockRecorder) GetNotifyResultsByReqID(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNotifyResults", reflect.TypeOf((*MockNotiRepository)(nil).GetNotifyResults), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNotifyResultsByReqID", reflect.TypeOf((*MockNotiRepository)(nil).GetNotifyResultsByReqID), arg0, arg1)
 }
 
 // UpsertNotifyResult mocks base method.

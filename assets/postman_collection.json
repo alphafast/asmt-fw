@@ -160,6 +160,31 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Get notification results",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:3000/notification/:reqId",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"notification",
+						":reqId"
+					],
+					"variable": [
+						{
+							"key": "reqId",
+							"value": "79a9707e-7796-48ec-9ad4-032fe280067d"
+						}
+					]
+				}
+			},
+			"response": []
 		}
 	]
 }

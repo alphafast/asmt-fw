@@ -106,6 +106,16 @@ func (uc *NotiUsecase) SaveNotifyResult(ctx context.Context, res model.NotiResul
 	return nil
 }
 
+func (uc *NotiUsecase) GetNotifyResultsByReqID(ctx context.Context, reqID string) ([]model.NotiResult, error) {
+	results, err := uc.notiRepo.GetNotifyResultsByReqID(ctx, reqID)
+	if err != nil {
+		return nil, errors.Wrap(err, "[NotiUsecase.GetNotifyResultsByReqID] error occurred")
+	}
+
+	return results, nil
+
+}
+
 func (uc *NotiUsecase) buildItemShippedNotification(ctx context.Context, reqID string, input noti.ItemShippedInput) ([]model.NotiRequest, error) {
 	targetUserID := input.BuyerUserID
 	user, err := uc.notiRepo.FindUserNotification(ctx, targetUserID)

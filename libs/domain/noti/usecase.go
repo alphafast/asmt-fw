@@ -42,4 +42,5 @@ type NotiUseCase interface {
 	BuildNotiRequestBySourceEvent(ctx context.Context, req RequestNotificationBySourceEvent) ([]model.NotiRequest, error)
 	Notify(ctx context.Context, reqs []model.NotiRequest) ([]model.NotiResult, error)
 	SaveNotifyResult(ctx context.Context, res model.NotiResult) error
+	GetNotifyResultsByReqID(ctx context.Context, reqID string) ([]model.NotiResult, error)
 }

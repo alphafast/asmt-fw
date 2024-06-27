@@ -37,11 +37,11 @@ func New(conn *sql.DB) (*NotiMySQLRepository, error) {
 	}, nil
 }
 
-func (r *NotiMySQLRepository) GetNotifyResults(ctx context.Context, reqID string) ([]model.NotiResult, error) {
+func (r *NotiMySQLRepository) GetNotifyResultsByReqID(ctx context.Context, reqID string) ([]model.NotiResult, error) {
 	targetResults := []MySqlNotiResult{}
 	txn := r.db.Where(&MySqlNotiResult{ReqID: reqID}).Find(&targetResults)
 	if txn.Error != nil {
-		return nil, errors.Wrap(txn.Error, "[NotiMySQLRepository.GetNotifyResults] error while finding notify results")
+		return nil, errors.Wrap(txn.Error, "[NotiMySQLRepository.GetNotifyResultsByRequestID] error while finding notify results")
 	}
 
 	results := []model.NotiResult{}
